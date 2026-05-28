@@ -1,9 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { fetchApi } from "@/lib/api-client";
 import { uploadCreatorFile } from "@/lib/upload";
 import {
   adminDeleteProduct,
@@ -61,20 +60,15 @@ const empty: FormState = {
 
 function AdminProductsPage() {
   const qc = useQueryClient();
-  const listFn = useServerFn(adminListProducts);
-  const upsertFn = useServerFn(adminUpsertProduct);
-  const deleteFn = useServerFn(adminDeleteProduct);
-
   const { data: products, isLoading } = useQuery({
     queryKey: ["admin", "products"],
-    queryFn: () => listFn(),
+    queryFn: () => adminListProducts(),
   });
 
   const { data: categories } = useQuery({
     queryKey: ["admin", "categories"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("categories").select("id, name").order("sort_order");
-      if (error) throw error;
+      const data = await fetchApi("/shop/categories/");
       return data as Category[];
     },
   });
@@ -82,7 +76,7 @@ function AdminProductsPage() {
   const [editing, setEditing] = useState<FormState | null>(null);
 
   const upsert = useMutation({
-    mutationFn: (input: { id?: string; values: any }) => upsertFn({ data: input }),
+    mutationFn: (input: { id?: string; values: any }) => adminUpsertProduct({ data: input }),
     onSuccess: () => {
       toast.success("Saved");
       qc.invalidateQueries({ queryKey: ["admin", "products"] });
@@ -93,7 +87,7 @@ function AdminProductsPage() {
   });
 
   const del = useMutation({
-    mutationFn: (id: string) => deleteFn({ data: { id } }),
+    mutationFn: (id: string) => adminDeleteProduct({ data: { id } }),
     onSuccess: () => {
       toast.success("Deleted");
       qc.invalidateQueries({ queryKey: ["admin", "products"] });

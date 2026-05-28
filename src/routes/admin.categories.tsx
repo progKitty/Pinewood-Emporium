@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { Pencil, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
@@ -28,19 +27,15 @@ const empty: FormState = { name: "", slug: "", description: "", image_url: "", s
 
 function AdminCategoriesPage() {
   const qc = useQueryClient();
-  const listFn = useServerFn(adminListCategories);
-  const upsertFn = useServerFn(adminUpsertCategory);
-  const deleteFn = useServerFn(adminDeleteCategory);
-
   const { data, isLoading } = useQuery({
     queryKey: ["admin", "categories"],
-    queryFn: () => listFn(),
+    queryFn: () => adminListCategories(),
   });
 
   const [editing, setEditing] = useState<FormState | null>(null);
 
   const upsert = useMutation({
-    mutationFn: (input: { id?: string; values: any }) => upsertFn({ data: input }),
+    mutationFn: (input: { id?: string; values: any }) => adminUpsertCategory({ data: input }),
     onSuccess: () => {
       toast.success("Saved");
       qc.invalidateQueries({ queryKey: ["admin", "categories"] });
@@ -51,7 +46,7 @@ function AdminCategoriesPage() {
   });
 
   const del = useMutation({
-    mutationFn: (id: string) => deleteFn({ data: { id } }),
+    mutationFn: (id: string) => adminDeleteCategory({ data: { id } }),
     onSuccess: () => {
       toast.success("Deleted");
       qc.invalidateQueries({ queryKey: ["admin", "categories"] });

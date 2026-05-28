@@ -1,9 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { fetchApi } from "@/lib/api-client";
 import { uploadCreatorFile } from "@/lib/upload";
 import {
   creatorDeleteProduct,
@@ -48,20 +47,15 @@ const empty: FormState = {
 
 function CreatorProductsPage() {
   const qc = useQueryClient();
-  const listFn = useServerFn(creatorListMyProducts);
-  const upsertFn = useServerFn(creatorUpsertProduct);
-  const deleteFn = useServerFn(creatorDeleteProduct);
-
   const { data: products, isLoading } = useQuery({
-    queryKey: ["creator", "my-products"],
-    queryFn: () => listFn(),
+    queryKey: ["my-products"],
+    queryFn: () => creatorListMyProducts(),
   });
 
   const { data: categories } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("categories").select("id, name").order("sort_order");
-      if (error) throw error;
+      const data = await fetchApi("/shop/categories/");
       return data as Category[];
     },
   });
@@ -69,7 +63,7 @@ function CreatorProductsPage() {
   const [editing, setEditing] = useState<FormState | null>(null);
 
   const upsert = useMutation({
-    mutationFn: (input: { id?: string; values: any }) => upsertFn({ data: input }),
+    mutationFn: (input: { id?: string; values: any }) => creatorUpsertProduct({ data: input }),
     onSuccess: () => {
       toast.success("Saved");
       qc.invalidateQueries({ queryKey: ["creator", "my-products"] });
@@ -81,7 +75,7 @@ function CreatorProductsPage() {
   });
 
   const del = useMutation({
-    mutationFn: (id: string) => deleteFn({ data: { id } }),
+    mutationFn: (id: string) => creatorDeleteProduct({ data: { id } }),
     onSuccess: () => {
       toast.success("Deleted");
       qc.invalidateQueries({ queryKey: ["creator", "my-products"] });

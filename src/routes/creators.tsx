@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchApi } from "@/lib/api-client";
 import { Reveal } from "@/components/site/Reveal";
 import { HeroTypewriter } from "@/components/site/HeroTypewriter";
 import { PineGroveArt, CompassArt } from "@/components/site/VectorArt";
@@ -29,13 +29,18 @@ function CreatorsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["creators", "approved"],
     queryFn: async (): Promise<Row[]> => {
-      const { data, error } = await supabase
-        .from("creators")
-        .select("id, display_name, bio, avatar_url, location, website")
-        .eq("status", "approved")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as Row[];
+      // Django returns a paginated response or a list, depending on DRF configuration
+      // We will assume a list for now, or DRF default pagination `results` array
+      const response = await fetchApi("/vendor/profiles/");
+      const data = response.results ? response.results : response;
+      return (data ?? []).map((v: any) => ({
+        id: String(v.id),
+        display_name: v.store_name,
+        bio: v.description,
+        avatar_url: null, // to be handled later if we add avatar
+        location: null,
+        website: null
+      })) as Row[];
     },
   });
 

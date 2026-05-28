@@ -5,17 +5,15 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { apiClient } from "./api-client";
+import { fetchApi } from "./api-client";
 
 type User = {
   id: number;
   username: string;
   email: string;
-  profile: {
-    full_name: string;
-    phone: string;
-    avatar: string | null;
-  }
+  role: "ADMIN" | "VENDOR" | "CUSTOMER";
+  first_name: string;
+  last_name: string;
 };
 
 type AuthContextValue = {
@@ -23,6 +21,8 @@ type AuthContextValue = {
   loading: boolean;
   signOut: () => void;
   setUser: (user: User | null) => void;
+  token: string | null;
+  setToken: (token: string | null) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -30,17 +30,29 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [token, setTokenState] = useState<string | null>(null);
+
+  const setToken = (newToken: string | null) => {
+    if (newToken) {
+      localStorage.setItem('accessToken', newToken);
+    } else {
+      localStorage.removeItem('accessToken');
+    }
+    setTokenState(newToken);
+  };
 
   useEffect(() => {
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      apiClient.get<{id: number, username: string, email: string, profile: any}>('/auth/me/')
-        .then(data => {
+    const t = localStorage.getItem('accessToken');
+    if (t) {
+      setTokenState(t);
+      fetchApi('/users/me/')
+        .then((data: any) => {
           setUser(data);
         })
         .catch(err => {
           console.error("Auth me failed:", err);
-          localStorage.removeItem('auth_token');
+          localStorage.removeItem('accessToken');
+          setTokenState(null);
           setUser(null);
         })
         .finally(() => {
@@ -52,13 +64,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = () => {
-    localStorage.removeItem('auth_token');
+    setToken(null);
     setUser(null);
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, signOut, setUser }}
+      value={{ user, loading, signOut, setUser, token, setToken }}
     >
       {children}
     </AuthContext.Provider>

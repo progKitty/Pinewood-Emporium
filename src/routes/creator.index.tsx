@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { creatorListMyProducts } from "@/lib/creators.functions";
 import { Package, ArrowRight, Eye, BookOpen } from "lucide-react";
 import { formatPrice } from "@/lib/format";
@@ -11,10 +10,9 @@ export const Route = createFileRoute("/creator/")({
 });
 
 function CreatorOverview() {
-  const listFn = useServerFn(creatorListMyProducts);
   const { data } = useQuery({
     queryKey: ["creator", "my-products"],
-    queryFn: () => listFn(),
+    queryFn: () => creatorListMyProducts(),
   });
 
   const total = data?.length ?? 0;

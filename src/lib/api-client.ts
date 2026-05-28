@@ -1,56 +1,28 @@
-const API_BASE_URL = 'http://localhost:8000/api';
+export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 
-export const apiClient = {
-  async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const token = localStorage.getItem('auth_token');
-    
-    const headers = new Headers(options.headers);
-    headers.set('Content-Type', 'application/json');
-    if (token) {
-      headers.set('Authorization', `Token ${token}`);
+export async function fetchApi(endpoint: string, options: RequestInit = {}) {
+  const token = localStorage.getItem("accessToken");
+  
+  const headers = {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...options.headers,
+  };
+
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      // Handle token expiration or unauthorized
+      localStorage.removeItem("accessToken");
+      window.location.href = "/login";
     }
-
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...options,
-      headers,
-    });
-
-    if (!response.ok) {
-      let errorMessage = 'An error occurred';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.error || errorData.detail || JSON.stringify(errorData);
-      } catch (e) {
-        errorMessage = response.statusText;
-      }
-      throw new Error(errorMessage);
-    }
-
-    if (response.status === 204) {
-      return {} as T;
-    }
-    return response.json();
-  },
-
-  get<T>(endpoint: string) {
-    return this.request<T>(endpoint, { method: 'GET' });
-  },
-
-  post<T>(endpoint: string, data: any) {
-    return this.request<T>(endpoint, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  put<T>(endpoint: string, data: any) {
-    return this.request<T>(endpoint, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  },
-
-  delete<T>(endpoint: string) {
-    return this.request<T>(endpoint, { method: 'DELETE' });
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || "API Request Failed");
   }
-};
+
+  return response.json();
+}

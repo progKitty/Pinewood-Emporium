@@ -2,7 +2,7 @@ import { createFileRoute, Outlet, redirect, Link, useNavigate } from "@tanstack/
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { supabase } from "@/integrations/supabase/client";
+
 import { useAuth } from "@/lib/auth-context";
 import { useMyCreator } from "@/lib/use-creator";
 import { applyAsCreator } from "@/lib/creators.functions";
@@ -10,9 +10,9 @@ import { toast } from "sonner";
 import { LayoutDashboard, Package, ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/creator")({
-  beforeLoad: async () => {
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) throw redirect({ to: "/login" });
+  beforeLoad: () => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) throw redirect({ to: "/login" });
   },
   component: CreatorLayout,
 });

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import type {} from "@tanstack/react-start";
 
 // TODO: replace with your project URL once a project name or custom domain is set.
 const BASE_URL = "";
@@ -26,18 +26,19 @@ export const Route = createFileRoute("/sitemap.xml")({
         ];
 
         try {
-          const { data } = await supabaseAdmin
-            .from("products")
-            .select("slug, updated_at")
-            .eq("active", true);
+          const res = await fetch("http://127.0.0.1:8000/api/shop/products/");
+          if (res.ok) {
+            const data = await res.json();
           if (data) {
-            for (const p of data) {
-              entries.push({
-                path: `/product/${p.slug}`,
-                lastmod: p.updated_at ? new Date(p.updated_at).toISOString().slice(0, 10) : undefined,
-                changefreq: "weekly",
-                priority: "0.8",
-              });
+            if (data) {
+              for (const p of data) {
+                entries.push({
+                  path: `/product/${p.slug}`,
+                  lastmod: p.updated_at ? new Date(p.updated_at).toISOString().slice(0, 10) : undefined,
+                  changefreq: "weekly",
+                  priority: "0.8",
+                });
+              }
             }
           }
         } catch {
