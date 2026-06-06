@@ -29,7 +29,6 @@ export const Route = createFileRoute("/sitemap.xml")({
           const res = await fetch("http://127.0.0.1:8000/api/shop/products/");
           if (res.ok) {
             const data = await res.json();
-          if (data) {
             if (data) {
               for (const p of data) {
                 entries.push({

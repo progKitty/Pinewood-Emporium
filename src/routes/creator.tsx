@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 
 import { useAuth } from "@/lib/auth-context";
 import { useMyCreator } from "@/lib/use-creator";
-import { applyAsCreator } from "@/lib/creators.functions";
+import { apiClient } from "@/lib/api-client";
 import { toast } from "sonner";
 import { LayoutDashboard, Package, ArrowLeft } from "lucide-react";
 
@@ -21,13 +21,12 @@ function CreatorLayout() {
   const { user } = useAuth();
   const { data: creator, isLoading } = useMyCreator();
   const qc = useQueryClient();
-  const applyFn = useServerFn(applyAsCreator);
   const navigate = useNavigate();
 
   const [form, setForm] = useState({ display_name: "", bio: "", location: "", website: "" });
 
   const apply = useMutation({
-    mutationFn: (input: typeof form) => applyFn({ data: input }),
+    mutationFn: (input: typeof form) => apiClient.post('/vendor/profiles/', input),
     onSuccess: () => {
       toast.success("Welcome aboard. Your creator dashboard is ready.");
       qc.invalidateQueries({ queryKey: ["my-creator"] });

@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { getMyOrder } from "@/lib/orders.functions";
+import { apiClient } from "@/lib/api-client";
 import { formatPrice, resolveImage } from "@/lib/format";
 import { PineLoader } from "@/components/site/PineLoader";
 import { CheckCircle2, Package, Truck } from "lucide-react";
@@ -13,10 +12,10 @@ export const Route = createFileRoute("/order/$id")({
 
 function OrderPage() {
   const { id } = Route.useParams();
-  const fn = useServerFn(getMyOrder);
+  
   const { data, isLoading, error } = useQuery({
     queryKey: ["order", id],
-    queryFn: () => fn({ data: { orderId: id } }),
+    queryFn: () => apiClient.get<any>(`/shop/orders/${id}/`),
   });
 
   if (isLoading) {
